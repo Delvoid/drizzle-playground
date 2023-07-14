@@ -1,0 +1,10 @@
+{
+  "extends": ["prettier"],
+  "rules": {
+    "quotes": ["error", "single"],
+    "semi": ["error", "always"],
+    "indent": ["error", 2],
+    "@next/next/no-html-link-for-pages": "off",
+    "react/jsx-key": "off"
+  }
+}
