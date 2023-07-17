@@ -25,7 +25,7 @@ export default async function Home() {
           </div>
         </div>
 
-        <DataTable searchKey="complete" data={formattedTasks} columns={columns} />
+        <DataTable searchKey="task" data={formattedTasks} columns={columns} />
       </div>
     </main>
   );

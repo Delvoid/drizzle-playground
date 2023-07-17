@@ -1,6 +1,7 @@
 import { todos } from '@/lib/db/schema';
 import { db } from '@/lib/db/turso';
 import { TodoValidator } from '@/lib/validators/todos';
+import { sql } from 'drizzle-orm';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
@@ -24,6 +25,17 @@ export const POST = async (req: NextRequest) => {
     if (error instanceof z.ZodError) {
       return new Response(error.message, { status: 400 });
     }
+    return new NextResponse('Internal error', { status: 500 });
+  }
+};
+
+export const DELETE = async (req: NextRequest) => {
+  try {
+    const deleteAll = await db.delete(todos).returning().all();
+
+    return NextResponse.json({ count: deleteAll.length }, { status: 200 });
+  } catch (error) {
+    console.log('[TODOS_DELETE]', error);
     return new NextResponse('Internal error', { status: 500 });
   }
 };

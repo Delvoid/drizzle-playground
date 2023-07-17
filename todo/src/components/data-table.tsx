@@ -32,6 +32,7 @@ import { todos } from '@/lib/db/schema';
 import { cn } from '@/lib/utils';
 import { TaskColumn } from './columns';
 import { DataTableFacetedFilter } from './data-table-faceted-filter';
+import { AlertModal } from '@/modals/alert-modal';
 
 interface DataTableProps {
   columns: ColumnDef<TaskColumn>[];
@@ -45,6 +46,8 @@ export function DataTable({ columns, data, searchKey }: DataTableProps) {
 
   const [text, setText] = useState('');
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [open, setOpen] = useState(false);
+
   const table = useReactTable({
     data,
     columns,
@@ -56,8 +59,6 @@ export function DataTable({ columns, data, searchKey }: DataTableProps) {
       columnFilters,
     },
   });
-
-  console.log(table.getRowModel().flatRows.length);
 
   const { mutate: createTodo, isLoading } = useMutation({
     mutationFn: async () => {
@@ -86,7 +87,7 @@ export function DataTable({ columns, data, searchKey }: DataTableProps) {
       });
     },
   });
-  const { mutate: updateTodo, isLoading: updateLoading } = useMutation({
+  const { mutate: updateTodo } = useMutation({
     mutationFn: async (todo: InferModel<typeof todos>) => {
       const payload: TodoCreateRequest = {
         task: todo.task,
@@ -114,6 +115,32 @@ export function DataTable({ columns, data, searchKey }: DataTableProps) {
     },
   });
 
+  const { mutate: deleteAllTodo, isLoading: deleteIsLoading } = useMutation({
+    mutationFn: async () => {
+      return await axios.delete(`/api/tasks/`);
+    },
+    onError: (error) => {
+      console.log('unable to delete tasks');
+      console.log(error);
+      setOpen(false);
+      return toast({
+        title: 'Something went wrong.',
+        description: 'Your tasks could not be deleted, try again.',
+        variant: 'destructive',
+      });
+    },
+    onSuccess: (data) => {
+      router.refresh();
+      console.log({ data });
+      toast({
+        title: `${data.data.count} task${data.data.count > 1 ? 's' : ''} deleted.`,
+        description: 'Your tasks were successfully deleted.',
+        variant: 'default',
+      });
+      setOpen(false);
+    },
+  });
+
   const handleAdd = () => {
     if (!text) {
       return;
@@ -122,25 +149,50 @@ export function DataTable({ columns, data, searchKey }: DataTableProps) {
   };
 
   const handleDoubleClick = (todo: InferModel<typeof todos>) => {
-    console.log({ data: todo });
     updateTodo(todo);
+  };
+
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Enter') {
+      handleAdd();
+    }
+  };
+
+  const handleDeleteAll = async () => {
+    deleteAllTodo();
   };
 
   return (
     <div>
-      <div className="flex items-center py-4">
+      <AlertModal
+        isOpen={open}
+        onClose={() => setOpen(false)}
+        onConfirm={handleDeleteAll}
+        loading={deleteIsLoading}
+      />
+      <div className="flex items-center py-4 space-x-2">
         <Input
           placeholder="Search"
           value={(table.getColumn(searchKey)?.getFilterValue() as string) ?? ''}
           onChange={(event) => table.getColumn(searchKey)?.setFilterValue(event.target.value)}
           className="max-w-sm"
         />
+        <Button
+          variant={'destructive'}
+          onClick={() => setOpen(true)}
+          disabled={table.getFilteredRowModel().rows.length < 1}
+        >
+          Delete All
+        </Button>
       </div>
       <div className="flex items-center py-4 w-full">
         <Input
           placeholder="Add task"
           value={text}
           onChange={(event) => setText(event.target.value)}
+          onKeyDown={(event) => {
+            handleKeyDown(event);
+          }}
         />
         <Button className="ml-4 bg-green-600 text-white" onClick={handleAdd} isLoading={isLoading}>
           Add
