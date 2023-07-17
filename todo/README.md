@@ -1,4 +1,4 @@
-# Drizzle ORM Express API Example
+# Drizzle ORM Next.js Todo App
 
 This project serves as a simple demonstration of using Drizzle ORM, a modern TypeScript ORM (Object-Relational Mapping) with turso database in an Next.js app. It is a todo app, with basic crud operations and filtering.
 
